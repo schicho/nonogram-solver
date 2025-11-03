@@ -2,3 +2,5 @@
 *.o
 *.pdf
 solver
+nonograms
+*.exe
