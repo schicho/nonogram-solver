@@ -55,6 +55,27 @@ void ExportSolution(Puzzle* puzzle, char* name) {	//O(L²)
 	}
 }
 
+void PrintSolution(Puzzle* puzzle) {	//O(L²)
+	static int solutions = 0;
+
+	if (puzzle == NULL) {// called with NULL at the end of the program every time
+		if (solutions == 0) {	//means we reached the end without finding any solutions
+			fprintf(stdout, "No solutions found.");
+		}
+	} else {
+		fprintf(stdout, "Solution %d:\n\n", solutions);
+		int i, j;
+		for (j = 0; j < puzzle->length[ROW]; j++) {
+			for (i = 0; i < puzzle->length[COL]; i++) {
+				fprintf(stdout, "%c", puzzle->line[COL][i].cells[j]->state);
+			}
+			fprintf(stdout, "\n");	//line break at end of each row
+		}
+		fprintf(stdout, "\n");	//line break at end of puzzle for extra blank line
+		solutions++;
+	}
+}
+
 
 
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

@@ -44,6 +44,7 @@ typedef struct _puzzle {
 
 //solverio.c
 void 	ExportSolution		(Puzzle*,	char*);
+void 	PrintSolution		(Puzzle*);
 void 	getDimension		(Puzzle*, 	FILE*,	int);
 void 	readBlockLenghts	(Puzzle*, 	FILE*,	int);
 void 	errorout			(char*	, 	char*);

@@ -291,7 +291,7 @@ void solve(Puzzle* puzzle, Stack** stack, Stack* cellstack, int unsolvedCellCoun
 		free(nextcellstack);
 	} else
 	if (unsolvedCellCount == 0) {	//the puzzle has no more '?'s
-		if (checkpuzzle(puzzle)) ExportSolution(puzzle, NULL);	//check solution and export it if correct
+		if (checkpuzzle(puzzle)) PrintSolution(puzzle);	//check solution and export it if correct
 	} else {
 		//invalid solution, get out
 	}
@@ -329,10 +329,10 @@ int main(int num, char** args) {
 		FreeStacks(stack);
 	} else
 	if (unsolvedCellCount == 0) {	//presolve fully solved puzzle
-		ExportSolution(puzzle, NULL);	//export one and only solution
+		PrintSolution(puzzle);	//export one and only solution
 	}
 	
-	ExportSolution(NULL, puzzle->name);	//if no solutions were found, this will create a blank file, meaning the puzzle is impossible
+	PrintSolution(NULL);	//if no solutions were found, this will create a blank file, meaning the puzzle is impossible
 	
 	FreePuzzle(puzzle);
 	
