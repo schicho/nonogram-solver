@@ -22,6 +22,9 @@ stocks.o: stocks.c solver.h
 clean:
 	rm -f *.o *~
 
+clean-solutions:
+	rm puzzles/*.sol benchmarks.csv
+
 benchmark:
 	@echo "file,duration_seconds" > benchmarks.csv
 	@for f in puzzles/*.cfg; do \
