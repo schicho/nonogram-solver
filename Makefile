@@ -1,4 +1,4 @@
-CFLAGS = -Wall -pedantic -std=c99 -c
+CFLAGS = -Wall -pedantic -std=c99 -c -O2
 CC = gcc
 
 solver: stacks.o solver.o solverio.o stocks.o presolver.o
