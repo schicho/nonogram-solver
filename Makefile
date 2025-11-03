@@ -23,15 +23,7 @@ clean:
 	rm -f *.o *~
 
 clean-solutions:
-	rm puzzles/*.sol benchmarks.csv
+	rm puzzles/*.sol
 
 benchmark:
-	@echo "file,duration_seconds" > benchmarks.csv
-	@for f in puzzles/*.cfg; do \
-	  echo "Running $$f" >&2; \
-	  /usr/bin/time -f '%e' -o /tmp/nonogram_time.$$ ./nonograms "$$f"; \
-	  rc=$$?; \
-	  t=$$(cat /tmp/nonogram_time.$$ 2>/dev/null || echo "0"); \
-	  echo "$$f,$$t" >> benchmarks.csv; \
-	  echo "nonogram_benchmark{file=\"$$f\",exit=\"$$rc\"} $$t"; \
-	done
+	/usr/bin/time ./nonograms puzzles/p6.cfg -b > /dev/null

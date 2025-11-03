@@ -302,6 +302,30 @@ void solve(Puzzle* puzzle, Stack** stack, Stack* cellstack, int unsolvedCellCoun
 	return;
 }
 
+void run_solver(char *filename) {
+    Puzzle *puzzle = getPuzzle(filename);
+
+    int unsolvedCellCount = presolve(puzzle);
+    if (unsolvedCellCount > 0)
+    {                             // presolve did not fully solve puzzle and did not detect impossibility
+        LinkCellsToLines(puzzle); // post pre-solve preparations
+        SetupMinsAndMaxes(puzzle);
+
+        /* solve! */
+        Stack **stack = InitStacks(puzzle);
+        solve(puzzle, stack, NULL, unsolvedCellCount);
+        FreeStacks(stack);
+    }
+    else if (unsolvedCellCount == 0)
+    {                          // presolve fully solved puzzle
+        PrintSolution(puzzle); // export one and only solution
+    }
+
+    PrintSolution(NULL);
+
+    FreePuzzle(puzzle);
+}
+
 
 
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -313,28 +337,20 @@ void solve(Puzzle* puzzle, Stack** stack, Stack* cellstack, int unsolvedCellCoun
   * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int main(int num, char** args) {
 	if (num < 2) errorout(ERROR_ARGS, "No file name was given.");
-	
 	if (strlen(args[1]) >= MAXPATH) errorout(ERROR_ARGS, "Filename too long.");
-	
-	Puzzle* puzzle = getPuzzle(args[1]);
-		
-	int unsolvedCellCount = presolve(puzzle);
-	if (unsolvedCellCount > 0) {	//presolve did not fully solve puzzle and did not detect impossibility
-		LinkCellsToLines(puzzle);	//post pre-solve preparations
-		SetupMinsAndMaxes(puzzle);
 
-		/* solve! */
-		Stack** stack = InitStacks(puzzle);
-		solve(puzzle, stack, NULL, unsolvedCellCount);
-		FreeStacks(stack);
-	} else
-	if (unsolvedCellCount == 0) {	//presolve fully solved puzzle
-		PrintSolution(puzzle);	//export one and only solution
-	}
+	int solve_counter = 0;
+	// benchmarking flag
+	if (num >= 3 && !strcmp(args[2], "-b"))
+		solve_counter = 500;
+
+	char filename[MAXPATH];
+
+	do {
+		// copy as getPuzzle() modifies the filename in place.
+		strncpy(filename, args[1], sizeof filename - 1);
+		run_solver(filename);
+	} while (solve_counter--);
 	
-	PrintSolution(NULL);	//if no solutions were found, this will create a blank file, meaning the puzzle is impossible
-	
-	FreePuzzle(puzzle);
-	
-	return 0;
+    return 0;
 }
