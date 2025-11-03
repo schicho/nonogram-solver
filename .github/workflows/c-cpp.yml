@@ -16,5 +16,3 @@ jobs:
       run: make
     - name: bench
       run: make benchmark
-    - name: result
-      run: awk -F, 'NR>1 {sum += $2} END {print sum}' benchmarks.csv
