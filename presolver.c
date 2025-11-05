@@ -1,8 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "stacks.h"
-#include "solver.h"
+
+#include "stocks.h"
+#include "presolver.h"
 
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   * presolve: O(L*N²)		Calls stackline on every row and on every column once to solve	 			*

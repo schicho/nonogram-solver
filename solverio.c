@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+
 #include "stacks.h"
-#include "solver.h"
+#include "solverio.h"
 
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   * ExportSolution: O(L²)	Exports a puzzle's solution as a grid of ASCII characters (#, -, ?) to a	*

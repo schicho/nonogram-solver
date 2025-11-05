@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "stacks.h"
+
+#include "solverio.h"
+#include "stocks.h"
+#include "presolver.h"
 #include "solver.h"
+
 
 #define MODE_GET 0
 #define MODE_RESET 1

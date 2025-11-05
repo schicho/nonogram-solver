@@ -1,5 +1,5 @@
-#ifndef _INCLUDE_STACKS
-#define _INCLUDE_STACKS
+#ifndef _STACKS_H
+#define _STACKS_H
 
 typedef void Item;
 typedef struct _element Element;
