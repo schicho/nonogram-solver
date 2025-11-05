@@ -3,7 +3,7 @@
 
 #include "types.h"
 
-int 	presolve	(Puzzle*);
-int 	stackline	(Line*, 	int);
+int presolve(Puzzle*);
+int stackline(Line*, int);
 
 #endif
