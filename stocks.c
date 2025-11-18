@@ -84,8 +84,8 @@ int checkline(Line* line, int length) {
 }
 
 //Optimized checkLine method without usage of the stack and malloc
-//-----left old method above in the code for comparison resons, replaced all usages
-//Improvement: ~1.3secondss
+//-----left old method above in the code for comparison reasons, replaced usages
+//Improvement: ~1.3seconds
 int checklineFast(Line* line, int length) {
     if (line->block[0].length == 0) return 1;
 
@@ -294,7 +294,7 @@ void FreeStacks(Stack** stack) {
 Stack** InitStacks(Puzzle* puzzle) {  // O(2L)	= O(L)
     int i;
 
-    Stack** stack = (Stack*restrict*restrict)malloc(AXES * sizeof(Stack*));
+    Stack*restrict*restrict stack = (Stack*restrict*restrict)malloc(AXES * sizeof(Stack*));
     stack[ROW] = CreateStack();
     for (i = 0; i < puzzle->length[ROW]; i++) Push(stack[ROW], (void*)&puzzle->line[ROW][i]);  // O(Lr)
     stack[COL] = CreateStack();
