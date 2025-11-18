@@ -83,6 +83,49 @@ int checkline(Line* line, int length) {
     return success;
 }
 
+//Optimized checkLine method without usage of the stack and malloc
+//-----left old method above in the code for comparison resons, replaced all usages
+//Improvement: ~1.3secondss
+int checklineFast(Line* line, int length) {
+    if (line->block[0].length == 0) return 1;
+
+    // Get rid of the stack, use local variables
+    int block_idx = 0;
+    int current_streak = 0;
+    int total_filled_count = 0;
+    int expected_total_count = getSumOfBlocks(line);
+
+    for (int j = 0; j < length; j++) {
+        int state = line->cells[j]->state;
+
+        if (state == STATE_FULL) {
+            current_streak++;
+            total_filled_count++;
+        }
+        // If we hit a Blank (or end of line), we validate the block we just finished
+        if (state == STATE_BLNK || j == length - 1) {
+            if (current_streak > 0) {
+                // A. Do we have more blocks than allowed?
+                if (block_idx >= line->blockNum) return 0;
+
+                // B. Is this block the wrong size?
+                if (line->block[block_idx].length != current_streak) return 0;
+
+                // C. Valid block found. Move to the next one.
+                block_idx++;
+                current_streak = 0;
+            }
+        }
+    }
+
+    // Did we find the exact right number of blocks?
+    if (block_idx != line->blockNum) return 0;
+
+    // Did we find the exact right number of filled cells? (Original logic)
+    if (total_filled_count != expected_total_count) return 0;
+    return 1;
+}
+
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * checkpuzzle: O(L²)				checks if a puzzle layout is a possible solution			 		*
  *																										*
@@ -95,7 +138,7 @@ int checkpuzzle(Puzzle* puzzle) {
     for (x = ROW; x < AXES; x++) {
         lines = puzzle->line[x];
         for (i = 0; i < puzzle->length[x]; i++) {  // check every row and column
-            if (!checkline(&lines[i], puzzle->length[!x])) return 0;
+            if (!checklineFast(&lines[i], puzzle->length[!x])) return 0;
         }
     }
 
