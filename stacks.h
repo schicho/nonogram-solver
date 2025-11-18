@@ -9,6 +9,7 @@ Stack* CreateStack();
 void Push(Stack*, Item*);
 Item* Pop(Stack*);
 void ClearStack(Stack*);
+void DestroyStack(Stack*);
 int IsStackEmpty(Stack*);
 int IsInStack(Stack*, Item*);
 

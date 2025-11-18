@@ -234,8 +234,8 @@ void FreePuzzle(Puzzle* puzzle) {  // O(Lr*Lc) + O(Lc) = O((Lr+1)*Lc) = O(Lr*Lc)
  *	@noreturn																							*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void FreeStacks(Stack** stack) {
-    ClearStack(stack[ROW]);
-    ClearStack(stack[COL]);
+    DestroyStack(stack[ROW]);
+    DestroyStack(stack[COL]);
     free(stack[ROW]);
     free(stack[COL]);
     free(stack);
