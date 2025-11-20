@@ -4,7 +4,7 @@
 #include "stacks.h"
 #include "types.h"
 
-Line* MergeBlockPositions(Line*, int, int);
+Line* MergeBlockPositions(Line*, int, int, int, int);
 void ExamineBlocks(Line*, int, int, int, Stack*, int);
 int solveline(Puzzle*, Stack**, Stack*, int);
 void solve(Puzzle*, Stack**, Stack*, int);
