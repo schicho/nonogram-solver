@@ -188,12 +188,13 @@ int solveline(Puzzle* puzzle, Stack** stack, Stack* cellstack, int x) {
 
     /* start recursive analysis of block positions */
     int highestMin = line->block[0].max - line->block[0].length + 1;
+    Stack* st = CreateStack();
     for (i = line->block[0].min; i <= highestMin; i++) {  // test filling blocksize cells after i = min for every possible block start
-        Stack* st = CreateStack();
+        ClearStack(st);
         ExamineBlocks(line, 0, length, i, st, -1);
         while (!IsStackEmpty(st)) ((Cell*)Pop(st))->state = STATE_UNKN;  // reset just in case
-        free(st);
     }
+    free(st);
 
     Line* solution = MergeBlockPositions(NULL, length, MODE_GET);
     if (solution == NULL) return IMPOSSIBLE;  // NULL means we didn't succeed at all in the previous loop
