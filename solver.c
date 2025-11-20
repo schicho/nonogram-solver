@@ -8,71 +8,54 @@
 #include "solverio.h"
 #include "stocks.h"
 
-#define MODE_GET 0
-#define MODE_RESET 1
-#define MODE_TEST 2
+Line* solution = NULL;
+
+void ResetSolution(int length) {
+    for (int i = 0; i < length; i++) {
+        free(solution->cells[i]);
+    }
+    free(solution->cells);
+    free(solution->block);
+    free(solution);
+    solution = NULL;
+}
+
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * MergeBlockPositions: 	Tests a line's different block configurations against each other as they are*
  *	O(L)					identified by ExamineBlocks. Finds out which cells can be determined with 	*
  *							certainty.																	*
  *																										*
  * @param Line* :			line we're merging with the current solution								*
- * @param int :			number of cells in this line (as well as in the solution)					*
- * @param int :			MODE_GET|MODE_RESET|MODE_TEST - operating mode								*
+ * @param int :			number of cells in this line (as well as in the solution)					    *
  *	@return :				solution to line after block mergers										*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-Line* MergeBlockPositions(Line* line, int length, int mode) {  // O(L)
-    static Line* solution = NULL;
+void MergeBlockPositions(Line* line, int length) {  // O(L)
     int i;
-
-    switch (mode) {
-        /* reset: clear solution */
-        case MODE_RESET: {
-            for (i = 0; i < length; i++) {
-                free(solution->cells[i]);
-            }
-            free(solution->cells);
-            free(solution->block);
-            free(solution);
-            solution = NULL;
-            break;
+    if (solution == NULL) {  // line is brand new, we had no previous solution
+        /* clone the line */
+        solution = (Line*)malloc(sizeof(Line));
+        solution->blockNum = line->blockNum;
+        solution->block = (Block*)malloc(solution->blockNum * sizeof(Block));
+        for (i = 0; i < solution->blockNum; i++) {
+            solution->block[i].length = line->block[i].length;
+            solution->block[i].min = line->block[i].min;
+            solution->block[i].max = line->block[i].max;
         }
-        /* get: just GET out of here and return solution */
-        case MODE_GET: {
-            break;
+
+        solution->cells = (Cell**)malloc(length * sizeof(Cell*));
+        for (i = 0; i < length; i++) {
+            solution->cells[i] = (Cell*)malloc(sizeof(Cell));
+            solution->cells[i]->state = line->cells[i]->state;
         }
-        /* compare line arg with current solution. If no current solution, create solution line and copy the arg line to it */
-        case MODE_TEST: {
-            if (solution == NULL) {  // line is brand new, we had no previous solution
-                /* clone the line */
-                solution = (Line*)malloc(sizeof(Line));
-                solution->blockNum = line->blockNum;
-                solution->block = (Block*)malloc(solution->blockNum * sizeof(Block));
-                for (i = 0; i < solution->blockNum; i++) {
-                    solution->block[i].length = line->block[i].length;
-                    solution->block[i].min = line->block[i].min;
-                    solution->block[i].max = line->block[i].max;
-                }
 
-                solution->cells = (Cell**)malloc(length * sizeof(Cell*));
-                for (i = 0; i < length; i++) {
-                    solution->cells[i] = (Cell*)malloc(sizeof(Cell));
-                    solution->cells[i]->state = line->cells[i]->state;
-                }
-
-            } else {  // if it's not the first time, then we have to update the solution based on mismatches with the new version of the line
-                /* every cell in this version of the line that mismatches the previously held solution gets set to unknown */
-                for (i = 0; i < length; i++) {
-                    if (line->cells[i]->state != solution->cells[i]->state) {
-                        solution->cells[i]->state = STATE_UNKN;
-                    }
-                }
+    } else {  // if it's not the first time, then we have to update the solution based on mismatches with the new version of the line
+        /* every cell in this version of the line that mismatches the previously held solution gets set to unknown */
+        for (i = 0; i < length; i++) {
+            if (line->cells[i]->state != solution->cells[i]->state) {
+                solution->cells[i]->state = STATE_UNKN;
             }
-            break;
         }
     }
-
-    return solution;
 }
 
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -158,7 +141,7 @@ void ExamineBlocks(Line* line, int n, int length, int start, Stack* cellstack, i
             ExamineBlocks(line, n + 1, length, j, cellstack, i - 1);
         }
     } else {  // all blocks are in a position, time to test them
-        MergeBlockPositions(line, length, MODE_TEST);
+        MergeBlockPositions(line, length);
     }
 
     /* undo changes made to cells */
@@ -195,7 +178,6 @@ int solveline(Puzzle* puzzle, Stack** stack, Stack* cellstack, int x) {
         free(st);
     }
 
-    Line* solution = MergeBlockPositions(NULL, length, MODE_GET);
     if (solution == NULL) return IMPOSSIBLE;  // NULL means we didn't succeed at all in the previous loop
     for (i = 0; i < length; i++) {
         if (line->cells[i]->state != solution->cells[i]->state) {
@@ -207,13 +189,13 @@ int solveline(Puzzle* puzzle, Stack** stack, Stack* cellstack, int x) {
                 Push(cellstack, line->cells[i]);
                 ConditionalPush(stack[!x], &puzzle->line[!x][i]);
             } else {
-                MergeBlockPositions(NULL, length, MODE_RESET);
+                ResetSolution(length);
                 return IMPOSSIBLE;  // can this even get this far without detection? better safe than sorry though!
             }
         }
     }
 
-    MergeBlockPositions(NULL, length, MODE_RESET);
+    ResetSolution(length);
     return solvedCells;
 }
 #undef IMPOSSIBLE
