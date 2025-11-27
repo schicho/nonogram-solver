@@ -203,7 +203,7 @@ int solveline(Puzzle* puzzle, Stack** stack, Stack* cellstack, int x) {
     }
     free(st);
 
-    if (solution == NULL) return IMPOSSIBLE;  // NULL means we didn't succeed at all in the previous loop
+    if (firstTry == 1) return IMPOSSIBLE;  // NULL means we didn't succeed at all in the previous loop
     for (i = 0; i < length; i++) {
         if (line->cells[i]->state != solution->cells[i]->state) {
             if (line->cells[i]->state == STATE_UNKN) {
