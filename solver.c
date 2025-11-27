@@ -113,38 +113,23 @@ void ExamineBlocks(Line* line, int n, int length, int start, Stack* cellstack, i
     Cell** cells = line->cells;
 
     /* fill blanks before position until the prev block's ending index*/
-    if (start > 0 && (start - 1) - prevblockend > 0) {  // beginning blank
-        // if (cells[start - 1]->state == STATE_FULL) return;
-        // if (cells[start - 1]->state == STATE_UNKN) {
-        //     cells[start - 1]->state = STATE_BLNK;
-        //     Push(cellstack, cells[start - 1]);
-        //     count++;
-        // }
-        
-        Cell* buffer[(start - 1) - prevblockend];
-        int cnter = 0;
-
-        for (i = start - 1; i > prevblockend; i--) {  // fill blanks between this block and previous one
-            // i = prev + 1 ->> i = Start - 1
+    if (start > 0) {  // beginning blank
+        if (cells[start - 1]->state == STATE_FULL) return;
+        if (cells[start - 1]->state == STATE_UNKN) {
+            cells[start - 1]->state = STATE_BLNK;
+            Push(cellstack, cells[start - 1]);
+            count++;
+        }
+        for (i = start - 2; i > prevblockend; i--) {  // fill blanks between this block and previous one
             if (cells[i]->state == STATE_UNKN) {
-                buffer[cnter] = cells[i];
-                cnter++;
-                // cells[i]->state = STATE_BLNK;
-                // Push(cellstack, cells[i]);
-                // count++;
+                cells[i]->state = STATE_BLNK;
+                Push(cellstack, cells[i]);
+                count++;
             } else if (cells[i]->state == STATE_FULL) {
-                // while (count-- > 0) ((Cell*)Pop(cellstack))->state = STATE_UNKN;
+                while (count-- > 0) ((Cell*)Pop(cellstack))->state = STATE_UNKN;
                 return;
             }
         }
-
-        for (i = 0; i < cnter; i++) {
-            buffer[i]-> state = STATE_BLNK;
-            // printf("%d \n", start - 1 - i);
-            // cells[i]->state = buffer[start - 1 - i];
-            Push(cellstack, buffer[i]);
-        }
-        count += cnter;
     }
 
     /* fill this block's current position's cells */
