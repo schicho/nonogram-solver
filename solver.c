@@ -93,65 +93,63 @@ Line* MergeBlockPositions(Line* line, int length) {  // O(L)
  * @param int :			last cell of the current test position for this block (inclusive)			*
  *	@noreturn :																							*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-void ExamineBlocks(Line* line, int n, int length, int start, int prevblockend) {
+void ExamineBlocks(Line* line, int n, int length, int start, Stack* cellstack, int prevblockend) {
     int i, count = 0;
     Cell** cells = line->cells;
-    int changes[length];
-    for (i = 0; i < length; i++){
-        changes[i] = 0;
-    }
-
-    // Check if there are any problems in the proposed assignment
-    if (start > 0) {
-        for (i = start - 1; i > prevblockend; i--) {
-            if (cells[i]->state == STATE_FULL) return;
-        }
-    }
-    for (i = start; i <= start + line->block[n].length - 1; i++) {
-        if (cells[i]->state == STATE_BLNK) return;
-    }
-    if (i < length) {  // terminating blank
-        if (cells[i]->state == STATE_FULL) return;
-        if (n == line->blockNum - 1) {
-            for (/*dont change i*/; i < length; i++) {  // fill blanks between this block and the end, since it's the last block
-                if (cells[i]->state == STATE_FULL) return;
-            }
-        }
-    }
 
     /* fill blanks before position until the prev block's ending index*/
     if (start > 0) {  // beginning blank
+        if (cells[start - 1]->state == STATE_FULL) return;
         if (cells[start - 1]->state == STATE_UNKN) {
             cells[start - 1]->state = STATE_BLNK;
-            changes[start - 1] = 1;
+            Push(cellstack, cells[start - 1]);
+            count++;
         }
         for (i = start - 2; i > prevblockend; i--) {  // fill blanks between this block and previous one
             if (cells[i]->state == STATE_UNKN) {
                 cells[i]->state = STATE_BLNK;
-                changes[i] = 1;
+                Push(cellstack, cells[i]);
+                count++;
+            } else if (cells[i]->state == STATE_FULL) {
+                while (count-- > 0) ((Cell*)Pop(cellstack))->state = STATE_UNKN;
+                return;
             }
         }
     }
 
     /* fill this block's current position's cells */
     for (i = start; i <= start + line->block[n].length - 1; i++) {
+        if (cells[i]->state == STATE_BLNK) {
+            while (count-- > 0) ((Cell*)Pop(cellstack))->state = STATE_UNKN;
+            return;
+        }
         if (cells[i]->state == STATE_UNKN) {
             cells[i]->state = STATE_FULL;
-            changes[i] = 1;
+            Push(cellstack, line->cells[i]);
+            count++;
         }
     }
 
     /* fill blanks after position */
     if (i < length) {  // terminating blank
+        if (cells[i]->state == STATE_FULL) {
+            while (count-- > 0) ((Cell*)Pop(cellstack))->state = STATE_UNKN;
+            return;
+        }
         if (cells[i]->state == STATE_UNKN) {
             cells[i]->state = STATE_BLNK;
-            changes[i] = 1;
+            Push(cellstack, cells[i]);
+            count++;
         }
         if (n == line->blockNum - 1) {
             for (/*dont change i*/; i < length; i++) {  // fill blanks between this block and the end, since it's the last block
                 if (cells[i]->state == STATE_UNKN) {
                     cells[i]->state = STATE_BLNK;
-                    changes[i] = 1;
+                    Push(cellstack, cells[i]);
+                    count++;
+                } else if (cells[i]->state == STATE_FULL) {
+                    while (count-- > 0) ((Cell*)Pop(cellstack))->state = STATE_UNKN;
+                    return;
                 }
             }
         }
@@ -164,18 +162,14 @@ void ExamineBlocks(Line* line, int n, int length, int start, int prevblockend) {
         int max = line->block[n + 1].max;
         int size = line->block[n + 1].length;
         for (j = min; j <= max - size + 1; j++) {  // test filling blocksize cells after i = min for every possible block start
-            ExamineBlocks(line, n + 1, length, j, i - 1);
+            ExamineBlocks(line, n + 1, length, j, cellstack, i - 1);
         }
     } else {  // all blocks are in a position, time to test them
         MergeBlockPositions(line, length);
     }
 
     /* undo changes made to cells */
-    for (i = 0; i < length; i++){
-        if (changes[i] == 1) {
-            cells[i]->state = STATE_UNKN;
-        }
-    }
+    while (count-- > 0) ((Cell*)Pop(cellstack))->state = STATE_UNKN;
     return;
 }
 
@@ -201,9 +195,13 @@ int solveline(Puzzle* puzzle, Stack** stack, Stack* cellstack, int x) {
 
     /* start recursive analysis of block positions */
     int highestMin = line->block[0].max - line->block[0].length + 1;
+    Stack* st = CreateStack();
     for (i = line->block[0].min; i <= highestMin; i++) {  // test filling blocksize cells after i = min for every possible block start
-        ExamineBlocks(line, 0, length, i, -1);
+        ClearStack(st);
+        ExamineBlocks(line, 0, length, i, st, -1);
+        while (!IsStackEmpty(st)) ((Cell*)Pop(st))->state = STATE_UNKN;  // reset just in case
     }
+    free(st);
 
     if (solution == NULL) return IMPOSSIBLE;  // NULL means we didn't succeed at all in the previous loop
     for (i = 0; i < length; i++) {
