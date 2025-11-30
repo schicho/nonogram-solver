@@ -5,3 +5,6 @@ solver
 nonograms
 *.exe
 temp.sol
+copilot.data.migration.agent.xml
+.idea
+CMakeLists.txt

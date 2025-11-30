@@ -15,6 +15,7 @@ Cell* PickCell(Puzzle*, int*, int*);
 void ConditionalPush(Stack*, Line*);
 int getSumOfBlocks(Line*);
 int checkline(Line*, int);
+int checklineFast(Line*, int);
 int checkpuzzle(Puzzle*);
 void LinkCellsToLines(Puzzle*);
 void SetupMinsAndMaxes(Puzzle*);
