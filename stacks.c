@@ -13,7 +13,7 @@ struct _stack {
     int capacity;
 };
 
-#define INITIAL_CAPACITY 32
+#define INITIAL_CAPACITY 1
 
 Stack* CreateStack() {
     Stack* stack = (Stack*)malloc(sizeof(Stack));
