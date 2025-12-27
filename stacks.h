@@ -2,7 +2,6 @@
 #define _STACKS_H
 
 typedef void Item;
-typedef struct _element Element;
 typedef struct _stack Stack;
 
 Stack* CreateStack();
