@@ -2,11 +2,6 @@
 
 #include <stdlib.h>
 
-struct _element {
-    Item* item;
-    struct _element* next;
-};
-
 struct _stack {
     Item** data;
     int size;
