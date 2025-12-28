@@ -1,6 +1,5 @@
 #include "stocks.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -41,7 +40,7 @@ int checkline(Line* line, int length) {
         }
         if (line->cells[j]->state == STATE_BLNK || j == length - 1) {
             if (streak != 0) {
-                int*restrict tmp = malloc(sizeof(tmp));
+                int* restrict tmp = malloc(sizeof(tmp));
                 *tmp = streak;
                 Push(streakStack, (void*)tmp);
             }
@@ -83,9 +82,9 @@ int checkline(Line* line, int length) {
     return success;
 }
 
-//Optimized checkLine method without usage of the stack and malloc
+// Optimized checkLine method without usage of the stack and malloc
 //-----left old method above in the code for comparison reasons, replaced usages
-//Improvement: ~1.3seconds
+// Improvement: ~1.3seconds
 int checklineFast(Line* line, int length) {
     if (line->block[0].length == 0) return 1;
 
