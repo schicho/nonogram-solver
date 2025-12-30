@@ -19,8 +19,14 @@ int presolve(Puzzle* puzzle) {  // O(L*N²)
     for (x = ROW; x < AXES; x++) {
         for (i = 0; i < puzzle->length[x]; i++) {
             if (unsolvedCellCount > 0) {
+                // There is a bug in these lines.
+                // If stackline detects an impossibility, it returns -1, causing these lines to add 
+                // 1 instead of returning -1 which is expected by the caller
+                // buf = stackline(&puzzle->line[x][i], puzzle->length[!x]);
+                // unsolvedCellCount -= buf;
+                // Fix:
                 buf = stackline(&puzzle->line[x][i], puzzle->length[!x]);
-                unsolvedCellCount -= buf;
+                if (buf == -1) return -1;
                 puzzle->line[x][i].unsolvedCells -= buf;
             } else {
                 return unsolvedCellCount;
