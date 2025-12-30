@@ -5,5 +5,7 @@
 
 int presolve(Puzzle*);
 int stackline(Line*, int);
+int presolveFast(Puzzle*);
+int stacklineFast(Line*, int);
 
 #endif

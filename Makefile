@@ -1,4 +1,4 @@
-CFLAGS = -Wall -pedantic -std=c99 -c -O2 -flto=auto
+CFLAGS = -Wall -pedantic -std=c99 -c -O2 -flto=auto -D_POSIX_C_SOURCE=200809L# TEMP - Benchmark presolver
 CC = gcc
 
 solver: stacks.o solver.o solverio.o stocks.o presolver.o
@@ -45,3 +45,4 @@ benchmark:
 	./nonograms puzzles/p6.cfg > temp.sol || { echo "ERROR: nonograms execution failed" >&2; rm -f temp.sol; exit 1; }
 	diff -q puzzles/p6.sol temp.sol >/dev/null || { echo "ERROR: output differs from puzzles/p6.sol" >&2; rm -f temp.sol; exit 1; }
 	/usr/bin/time ./nonograms puzzles/p6.cfg -b > /dev/null
+

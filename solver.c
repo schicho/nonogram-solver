@@ -4,6 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+// TEMP - Benchmark presolver
+#include <assert.h>
+#include <time.h>
+#include <bits/types/struct_timespec.h>
+# define CLOCK_MONOTONIC 1
+
 #include "presolver.h"
 #include "solverio.h"
 #include "stocks.h"
@@ -313,6 +319,28 @@ void run_solver(char* filename) {
     FreePuzzle(puzzle);
 }
 
+// TEMP - Benchmark presolver
+void reset_puzzle(Puzzle *p) {
+    const int row_count = p->length[ROW];
+    const int column_count = p->length[COL];
+
+    for (int r = 0; r < row_count; ++r)
+        for (int c = 0; c < column_count; ++c)
+            p->line[ROW][r].cells[c]->state = STATE_UNKN;
+
+    for (int r = 0; r < row_count; ++r)
+        p->line[ROW][r].unsolvedCells = column_count;
+
+    for (int c = 0; c < column_count; ++c)
+        p->line[COL][c].unsolvedCells = row_count;
+}
+
+double now_seconds(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (double)ts.tv_sec + (double)ts.tv_nsec * 1e-9;
+}
+
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * main: O(TODO)			Solves a nonogram puzzle													*
  *																										*
@@ -321,6 +349,69 @@ void run_solver(char* filename) {
  *	@return int :			always returns 0 (or exit(1) if an error occurs)							*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int main(int num, char** args) {
+    // ----- TEMP - Benchmark presolver ------------------------------------------------------------
+    const int NUM_PUZZLES = 16;
+    const int N = 50000;
+    Puzzle* puzzles[NUM_PUZZLES];
+    int expected_results[NUM_PUZZLES];
+
+    // Load puzzles once
+    for (int i = 0; i < NUM_PUZZLES; ++i) {
+        char *filename = malloc(MAXPATH);
+        if (!filename) { perror("malloc"); exit(1); }
+        snprintf(filename, 64, "puzzles/p%d.cfg", i + 1);
+        puzzles[i] = getPuzzle(filename);
+    }
+
+    // Warmup and detect differences in results
+    for (int i = 0; i < NUM_PUZZLES; ++i) expected_results[i] = presolve(puzzles[i]);
+    for (int i = 0; i < NUM_PUZZLES; ++i) reset_puzzle(puzzles[i]);
+    for (int i = 0; i < NUM_PUZZLES; ++i) assert(expected_results[i] == presolveFast(puzzles[i]));
+    for (int i = 0; i < NUM_PUZZLES; ++i) reset_puzzle(puzzles[i]);
+
+    double total_presolve_time = 0.0;
+    double total_presolve_fast_time = 0.0;
+    double start_time;
+
+    for (int iter = 0; iter < N; ++iter) {
+        // Alternate order
+        if ((iter & 1) == 0) {
+            start_time = now_seconds();
+            for (int i = 0; i < NUM_PUZZLES; ++i) presolveFast(puzzles[i]);
+            total_presolve_fast_time += (now_seconds() - start_time);
+            for (int i = 0; i < NUM_PUZZLES; ++i) reset_puzzle(puzzles[i]);
+            
+            start_time = now_seconds();
+            for (int i = 0; i < NUM_PUZZLES; ++i) presolve(puzzles[i]);
+            total_presolve_time += (now_seconds() - start_time);
+            for (int i = 0; i < NUM_PUZZLES; ++i) reset_puzzle(puzzles[i]);
+        } else {
+            start_time = now_seconds();
+            for (int i = 0; i < NUM_PUZZLES; ++i) presolve(puzzles[i]);
+            total_presolve_time += (now_seconds() - start_time);
+            for (int i = 0; i < NUM_PUZZLES; ++i) reset_puzzle(puzzles[i]);
+
+            start_time = now_seconds();
+            for (int i = 0; i < NUM_PUZZLES; ++i) presolveFast(puzzles[i]);
+            total_presolve_fast_time += (now_seconds() - start_time);
+            for (int i = 0; i < NUM_PUZZLES; ++i) reset_puzzle(puzzles[i]);
+        }
+    }
+
+    double avg_presolve_us = (total_presolve_time / (double)N) * 1e6;
+    double avg_presolve_fast_us = (total_presolve_fast_time / (double)N) * 1e6;
+    double speedup_factor = avg_presolve_us / avg_presolve_fast_us;
+
+    printf("Avg presolve time for all %d puzzles (%d iterations): %.3f us\n",
+        NUM_PUZZLES, N, avg_presolve_us);
+    printf("Avg presolve fast time for all %d puzzles (%d iterations): %.3f us\n",
+        NUM_PUZZLES, N, avg_presolve_fast_us);
+    printf("Speedup factor: %.3f\n", speedup_factor);
+
+    return 0;
+
+    
+    // ----- MAIN ----------------------------------------------------------------------------------
     if (num < 2) errorout(ERROR_ARGS, "No file name was given.");
     if (strlen(args[1]) >= MAXPATH) errorout(ERROR_ARGS, "Filename too long.");
 
