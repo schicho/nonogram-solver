@@ -12,7 +12,6 @@
 #define MODE_RESET 1
 #define MODE_TEST 2
 #define MODE_INIT 3
-#define MODE_FREE 4
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * MergeBlockPositions: 	Tests a line's different block configurations against each other as they are*
  *	O(L)					identified by ExamineBlocks. Finds out which cells can be determined with 	*
@@ -29,7 +28,7 @@ Line* MergeBlockPositions(Line* line, int length, int mode, int maxBlocks, int m
     int i;
 
     switch (mode) {
-        case MODE_INIT:{
+        case MODE_INIT: {
             solution = (Line*)malloc(sizeof(Line));
             solution->blockNum = maxBlocks;
             solution->block = (Block*)malloc(maxBlocks * sizeof(Block));
@@ -37,15 +36,6 @@ Line* MergeBlockPositions(Line* line, int length, int mode, int maxBlocks, int m
             for (i = 0; i < maxCells; i++) {
                 solution->cells[i] = (Cell*)malloc(sizeof(Cell));
             } 
-            break;
-        }
-        case MODE_FREE: {
-            for (i = 0; i < maxCells; i++) {
-                free(solution->cells[i]);
-            }
-            free(solution->cells);
-            free(solution->block);
-            free(solution);
             break;
         }
         /* reset: clear solution */
@@ -348,7 +338,6 @@ void run_solver(char* filename) {
         Stack** stack = InitStacks(puzzle);
         MergeBlockPositions(NULL, 0, MODE_INIT, GetMaxBlockNumber(puzzle), GetMaxCellsNumber(puzzle));
         solve(puzzle, stack, NULL, unsolvedCellCount);
-        MergeBlockPositions(NULL, 0, MODE_FREE, GetMaxBlockNumber(puzzle), GetMaxCellsNumber(puzzle));
         FreeStacks(stack);
     } else if (unsolvedCellCount == 0) {  // presolve fully solved puzzle
         PrintSolution(puzzle);            // export one and only solution
