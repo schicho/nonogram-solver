@@ -263,13 +263,17 @@ int GetMaxCellsNumber(Puzzle* puzzle) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void solve(Puzzle* puzzle, Stack** stack, Stack* cellstack, int unsolvedCellCount) {
     /* continuously solve puzzle */
-    while (!(IsStackEmpty(stack[ROW]) && IsStackEmpty(stack[COL])) && unsolvedCellCount > 0) {
-        if (!IsStackEmpty(stack[ROW])) {
+    int row_empty = IsStackEmpty(stack[ROW]);
+    int col_empty = IsStackEmpty(stack[COL]);
+    while (!(row_empty && col_empty) && unsolvedCellCount > 0) {
+        if (!row_empty) {
             unsolvedCellCount -= solveline(puzzle, stack, cellstack, ROW);
         }
-        if (!IsStackEmpty(stack[COL])) {
+        if (!col_empty) {
             unsolvedCellCount -= solveline(puzzle, stack, cellstack, COL);
         }
+        row_empty = IsStackEmpty(stack[ROW]);
+        col_empty = IsStackEmpty(stack[COL]);
     }
 
     if (unsolvedCellCount > 0) {               // puzzle could not be fully solved through regular means... time to guess
@@ -316,8 +320,6 @@ void solve(Puzzle* puzzle, Stack** stack, Stack* cellstack, int unsolvedCellCoun
         free(nextcellstack);
     } else if (unsolvedCellCount == 0) {                 // the puzzle has no more '?'s
         if (checkpuzzle(puzzle)) PrintSolution(puzzle);  // check solution and export it if correct
-    } else {
-        // invalid solution, get out
     }
 
     ClearStack(stack[ROW]);  // in case they are not empty yet
