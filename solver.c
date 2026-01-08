@@ -202,7 +202,6 @@ int solveline(Puzzle* puzzle, Stack** stack, Stack* cellstack, int x) {
     int highestMin = line->block[0].max - line->block[0].length + 1;
     Stack* st = CreateStack();
     for (i = line->block[0].min; i <= highestMin; i++) {  // test filling blocksize cells after i = min for every possible block start
-        ClearStack(st);
         ExamineBlocks(line, 0, length, i, st, -1);
         while (!IsStackEmpty(st)) ((Cell*)Pop(st))->state = STATE_UNKN;  // reset just in case
     }
@@ -316,7 +315,6 @@ void solve(Puzzle* puzzle, Stack** stack, Stack* cellstack, int unsolvedCellCoun
         puzzle->line[ROW][row].unsolvedCells++;
         puzzle->line[COL][col].unsolvedCells++;
 
-        ClearStack(nextcellstack);  // should already be cleared, but clear it anyway
         free(nextcellstack);
     } else if (unsolvedCellCount == 0) {                 // the puzzle has no more '?'s
         if (checkpuzzle(puzzle)) PrintSolution(puzzle);  // check solution and export it if correct
