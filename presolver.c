@@ -6,6 +6,31 @@
 
 #include "stocks.h"
 
+typedef struct {
+    int minSumOfBlocksAndBlanks;
+    int lengthOfLargestBlock;
+} BasicLineConstraints;
+
+static inline BasicLineConstraints getBasicLineConstraints(const Line* line) {
+    int minSumOfBlocksAndBlanks = 0;
+    int lengthOfLargestBlock = 0;
+
+    for (int i = 0; i < line->blockNum; ++i) {
+        int len = line->block[i].length;
+        minSumOfBlocksAndBlanks += len;
+
+        if (len > lengthOfLargestBlock)
+            lengthOfLargestBlock = len;
+    }
+
+    minSumOfBlocksAndBlanks += (line->blockNum - 1);
+
+    return (BasicLineConstraints){
+        .minSumOfBlocksAndBlanks = minSumOfBlocksAndBlanks,
+        .lengthOfLargestBlock = lengthOfLargestBlock
+    };
+}
+
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * presolve: O(L*N²)		Calls stackline on every row and on every column once to solve	 			*
  *							the easiest cells, to pave the way for the fuller linesolver.				*
@@ -149,8 +174,9 @@ int stackline(Line* line, int length) {
 }
 
 int stacklineFast(Line* line, int length) {
-    int sum = getMinSumOfBlocksAndBlanks(line, 0);  // O(N)
-    int cap = getLengthOfLargestBlock(line);        // O(N)
+    BasicLineConstraints basicLineConstraints = getBasicLineConstraints(line);  // O(N)
+    int sum = basicLineConstraints.minSumOfBlocksAndBlanks;
+    int cap = basicLineConstraints.lengthOfLargestBlock;
 
     if (sum > length) {
         return IMPOSSIBLE;  // impossible
@@ -206,8 +232,9 @@ int stacklineFast(Line* line, int length) {
         int n = 0;
         i = length - sum;  // the first (length - sum) cells are unaffected, skip them
         while (n < blockNum) {
-            int limit = i + block[n].length - (length - sum);  // the next (blocksize - (linelength - sum)) cells are full
-            if (block[n].length > length - sum) {              // is there an overlap of this block?
+            const int slack = length - sum;
+            int limit = i + block[n].length - slack;    // the next (blocksize - (linelength - sum)) cells are full
+            if (block[n].length > length - sum) {       // is there an overlap of this block?
                 for (; i < limit; i++) {
                     if (cells[i]->state == STATE_BLNK) {
                         return IMPOSSIBLE;
