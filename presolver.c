@@ -27,16 +27,15 @@ static inline BasicLineConstraints getBasicLineConstraints(const Line* line) {
 
     return (BasicLineConstraints){
         .minSumOfBlocksAndBlanks = minSumOfBlocksAndBlanks,
-        .lengthOfLargestBlock = lengthOfLargestBlock
-    };
+        .lengthOfLargestBlock = lengthOfLargestBlock};
 }
 
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * presolve: O(L*N²)		Calls stackline on every row and on every column once to solve	 			*
  *							the easiest cells, to pave the way for the fuller linesolver.				*
  *																										*
- * @param Puzzle* :		puzzle to preprocess														*
- *	@return int :			number of unsolved cells left in the puzzle									*
+ * @param Puzzle* :		    puzzle to preprocess														*
+ * @return int :			number of unsolved cells left in the puzzle									*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int presolve(Puzzle* puzzle) {  // O(L*N²)
     int unsolvedCellCount = puzzle->length[ROW] * puzzle->length[COL];
@@ -45,7 +44,7 @@ int presolve(Puzzle* puzzle) {  // O(L*N²)
         for (i = 0; i < puzzle->length[x]; i++) {
             if (unsolvedCellCount > 0) {
                 // There is a bug in these lines.
-                // If stackline detects an impossibility, it returns -1, causing these lines to add 
+                // If stackline detects an impossibility, it returns -1, causing these lines to add
                 // 1 instead of returning -1 which is expected by the caller
                 // buf = stackline(&puzzle->line[x][i], puzzle->length[!x]);
                 // unsolvedCellCount -= buf;
@@ -83,14 +82,14 @@ int presolveFast(Puzzle* puzzle) {  // O(L*N²)
 
 #define IMPOSSIBLE -1
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * stackline: O(N²)		Solves cells implicitly based on the line's native 							*
+ * stackline: O(N²)		    Solves cells implicitly based on the line's native 							*
  *							characteristics, ie block number and block sizes.							*
- * 						NOTE: this routine will never provide new information if used more than once*
+ * 						    NOTE: this routine will never provide new information if used more than once*
  *							for a single line.															*
  *																										*
  * @param Line* :			line to solve																*
- * @param int :			length of this line 														*
- *	@return int :			number of solved cells, or -1 if an impossibility was discovered.			*
+ * @param int :			    length of this line 														*
+ * @return int :			number of solved cells, or -1 if an impossibility was discovered.			*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int stackline(Line* line, int length) {
     int sum = getMinSumOfBlocksAndBlanks(line, 0);  // O(N)
@@ -225,16 +224,19 @@ int stacklineFast(Line* line, int length) {
             }
         }
         return ret;
-    } else if (length - sum < cap) {  // only situation in which stacking will do anything
+    }
+    
+    const int slack = length - sum;
+
+    if (slack < cap) { // only situation in which stacking will do anything
         /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
          *  Uses simple math to identify implied cells for general cases *
          * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
         int n = 0;
-        i = length - sum;  // the first (length - sum) cells are unaffected, skip them
+        i = slack;  // the first (length - sum) cells are unaffected, skip them
         while (n < blockNum) {
-            const int slack = length - sum;
-            int limit = i + block[n].length - slack;    // the next (blocksize - (linelength - sum)) cells are full
-            if (block[n].length > length - sum) {       // is there an overlap of this block?
+            int limit = i + block[n].length - slack;  // the next (blocksize - (linelength - sum)) cells are full
+            if (block[n].length > slack) {     // is there an overlap of this block?
                 for (; i < limit; i++) {
                     if (cells[i]->state == STATE_BLNK) {
                         return IMPOSSIBLE;
@@ -243,7 +245,7 @@ int stacklineFast(Line* line, int length) {
                         ret++;
                     }
                 }
-                i += length - sum;  // the next (length - sum) cells are unaffected
+                i += slack;  // the next (length - sum) cells are unaffected
             } else {
                 i += line->block[n].length;  // skip blocksize cells!
             }
@@ -253,6 +255,7 @@ int stacklineFast(Line* line, int length) {
         }
         return ret;
     }
+    
     return 0;
 }
 #undef IMPOSSIBLE
