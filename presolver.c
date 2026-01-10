@@ -11,7 +11,7 @@ typedef struct {
     int lengthOfLargestBlock;
 } BasicLineConstraints;
 
-static inline BasicLineConstraints getBasicLineConstraints(const Line* line) {
+static BasicLineConstraints getBasicLineConstraints(const Line* line) {
     int minSumOfBlocksAndBlanks = 0;
     int lengthOfLargestBlock = 0;
 
