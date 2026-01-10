@@ -369,6 +369,7 @@ int main(int num, char** args) {
     for (int i = 0; i < NUM_PUZZLES; ++i) assert(expected_results[i] == presolveFast(puzzles[i]));
     for (int i = 0; i < NUM_PUZZLES; ++i) reset_puzzle(puzzles[i]);
 
+    volatile int sink = 0;
     double total_presolve_time = 0.0;
     double total_presolve_fast_time = 0.0;
     double start_time;
@@ -377,22 +378,22 @@ int main(int num, char** args) {
         // Alternate order
         if ((iter & 1) == 0) {
             start_time = now_seconds();
-            for (int i = 0; i < NUM_PUZZLES; ++i) presolveFast(puzzles[i]);
+            for (int i = 0; i < NUM_PUZZLES; ++i) sink += presolveFast(puzzles[i]);
             total_presolve_fast_time += (now_seconds() - start_time);
             for (int i = 0; i < NUM_PUZZLES; ++i) reset_puzzle(puzzles[i]);
             
             start_time = now_seconds();
-            for (int i = 0; i < NUM_PUZZLES; ++i) presolve(puzzles[i]);
+            for (int i = 0; i < NUM_PUZZLES; ++i) sink += presolve(puzzles[i]);
             total_presolve_time += (now_seconds() - start_time);
             for (int i = 0; i < NUM_PUZZLES; ++i) reset_puzzle(puzzles[i]);
         } else {
             start_time = now_seconds();
-            for (int i = 0; i < NUM_PUZZLES; ++i) presolve(puzzles[i]);
+            for (int i = 0; i < NUM_PUZZLES; ++i) sink += presolve(puzzles[i]);
             total_presolve_time += (now_seconds() - start_time);
             for (int i = 0; i < NUM_PUZZLES; ++i) reset_puzzle(puzzles[i]);
 
             start_time = now_seconds();
-            for (int i = 0; i < NUM_PUZZLES; ++i) presolveFast(puzzles[i]);
+            for (int i = 0; i < NUM_PUZZLES; ++i) sink += presolveFast(puzzles[i]);
             total_presolve_fast_time += (now_seconds() - start_time);
             for (int i = 0; i < NUM_PUZZLES; ++i) reset_puzzle(puzzles[i]);
         }
