@@ -8,9 +8,103 @@
 #include "solverio.h"
 #include "stocks.h"
 
+typedef struct {
+    Line* line;
+    int complexity;
+} LineWithComplexity;
+
+/** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * CalculateLineComplexity:	Calculates a heuristic score for how constrained a line is.			    	*
+ *							    A lower score means that solving this line is more complex              *
+ *				                and should therefore be done later                                      *
+ *																										*
+ * @param Line* :				line to calculate complexity for								    	*
+ * @param int :				    length of the line														*
+ *	@return int :				complexity score where lower means that it is more complex				*
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+int CalculateLineComplexity(Line* line, int length) {
+    // when lines are solved, then they get the lowest complexity, as they can be checked last
+    if (line->unsolvedCells == 0) return 999999;
+    
+    int totalBlockLength = 0;
+    int i;
+    
+    for (i = 0; i < line->blockNum; i++) {
+        totalBlockLength += line->block[i].length;
+    }
+
+    int minSpaces = (line->blockNum > 0) ? (line->blockNum - 1) : 0;
+    
+    // The amount of cells that are free, after all blocks would be inserted with the minimum space between them
+    int freeCells = length - totalBlockLength - minSpaces;
+
+    int complexity = (freeCells * 1000) + line->unsolvedCells;
+    
+    return complexity;
+}
+
+/** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * CompareLineComplexity:	Comparison function for sorting lines by complexity				    		*
+ *																										*
+ * @param void* :				first line pointer														*
+ * @param void* :				second line pointer														*
+ *	@return int :				comparison result (-1, 0, 1)											*
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+int CompareLineComplexity(const void* a, const void* b) {
+    LineWithComplexity* la = (LineWithComplexity*)a;
+    LineWithComplexity* lb = (LineWithComplexity*)b;
+    return la->complexity - lb->complexity;
+}
+
+/** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * SortStackByComplexity:	Sorts a stack by line complexity                        					*
+ *																										*
+ * @param Stack* :				stack to sort															*
+ * @param int :				ROW|COL - coordinate of this line							    			*
+ * @param int* :			length of the line															*
+ *	@noreturn :	                                            											*
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+void SortStackByComplexity(Stack* stack, int length) {
+    int count = 0;
+
+    // need to count the elements in order to allocate enough space for all lines
+    Stack* tempStack = CreateStack();
+    while (!IsStackEmpty(stack)) {
+        Push(tempStack, Pop(stack));
+        count++;
+    }
+    
+    if (count == 0) {
+        free(tempStack);
+        return;
+    }
+    
+    LineWithComplexity* lines = (LineWithComplexity*)malloc(count * sizeof(LineWithComplexity));
+
+    int i = 0;
+    
+    while (!IsStackEmpty(tempStack)) {
+        Line* line = (Line*)Pop(tempStack);
+        lines[i].line = line;
+        lines[i].complexity = CalculateLineComplexity(line, length);
+        i++;
+    }
+
+    qsort(lines, count, sizeof(LineWithComplexity), CompareLineComplexity);
+    
+    // Push lines back to original stack in reverse order so that the easiest one will be solved first
+    for (i = count - 1; i >= 0; i--) {
+        Push(stack, lines[i].line);
+    }
+    
+    free(tempStack);
+    free(lines);
+}
+
 #define MODE_GET 0
 #define MODE_RESET 1
 #define MODE_TEST 2
+#define MODE_INIT 3
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * MergeBlockPositions: 	Tests a line's different block configurations against each other as they are*
  *	O(L)					identified by ExamineBlocks. Finds out which cells can be determined with 	*
@@ -21,20 +115,35 @@
  * @param int :			MODE_GET|MODE_RESET|MODE_TEST - operating mode								*
  *	@return :				solution to line after block mergers										*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-Line* MergeBlockPositions(Line* line, int length, int mode) {  // O(L)
+Line* MergeBlockPositions(Line* line, int length, int mode, int maxBlocks, int maxCells) {  // O(L)
     static Line* solution = NULL;
+    static int firstTry = 1;
     int i;
 
     switch (mode) {
+        case MODE_INIT: {
+            solution = (Line*)malloc(sizeof(Line));
+            solution->blockNum = maxBlocks;
+            solution->block = (Block*)malloc(maxBlocks * sizeof(Block));
+            solution->cells = (Cell**)malloc(maxCells * sizeof(Cell*));
+            for (i = 0; i < maxCells; i++) {
+                solution->cells[i] = (Cell*)malloc(sizeof(Cell));
+            } 
+            break;
+        }
         /* reset: clear solution */
         case MODE_RESET: {
             for (i = 0; i < length; i++) {
-                free(solution->cells[i]);
+                solution->cells[i]->state = 'n';
+                solution->cells[i]->row = NULL;
+                solution->cells[i]->col = NULL;
             }
-            free(solution->cells);
-            free(solution->block);
-            free(solution);
-            solution = NULL;
+            for (i = 0; i < solution->blockNum; i++) {
+                solution->block[i].length = 0;
+                solution->block[i].min = 0;
+                solution->block[i].max = 0;
+            }
+            firstTry = 1;
             break;
         }
         /* get: just GET out of here and return solution */
@@ -43,20 +152,16 @@ Line* MergeBlockPositions(Line* line, int length, int mode) {  // O(L)
         }
         /* compare line arg with current solution. If no current solution, create solution line and copy the arg line to it */
         case MODE_TEST: {
-            if (solution == NULL) {  // line is brand new, we had no previous solution
+            if (firstTry == 1) {  // line is brand new, we had no previous solution
                 /* clone the line */
-                solution = (Line*)malloc(sizeof(Line));
-                solution->blockNum = line->blockNum;
-                solution->block = (Block*)malloc(solution->blockNum * sizeof(Block));
-                for (i = 0; i < solution->blockNum; i++) {
+                firstTry = 0;
+                for (i = 0; i < line->blockNum; i++) {
                     solution->block[i].length = line->block[i].length;
                     solution->block[i].min = line->block[i].min;
                     solution->block[i].max = line->block[i].max;
                 }
 
-                solution->cells = (Cell**)malloc(length * sizeof(Cell*));
                 for (i = 0; i < length; i++) {
-                    solution->cells[i] = (Cell*)malloc(sizeof(Cell));
                     solution->cells[i]->state = line->cells[i]->state;
                 }
 
@@ -158,7 +263,7 @@ void ExamineBlocks(Line* line, int n, int length, int start, Stack* cellstack, i
             ExamineBlocks(line, n + 1, length, j, cellstack, i - 1);
         }
     } else {  // all blocks are in a position, time to test them
-        MergeBlockPositions(line, length, MODE_TEST);
+        MergeBlockPositions(line, length, MODE_TEST, 0, 0);
     }
 
     /* undo changes made to cells */
@@ -188,14 +293,14 @@ int solveline(Puzzle* puzzle, Stack** stack, Stack* cellstack, int x) {
 
     /* start recursive analysis of block positions */
     int highestMin = line->block[0].max - line->block[0].length + 1;
+    Stack* st = CreateStack();
     for (i = line->block[0].min; i <= highestMin; i++) {  // test filling blocksize cells after i = min for every possible block start
-        Stack* st = CreateStack();
         ExamineBlocks(line, 0, length, i, st, -1);
         while (!IsStackEmpty(st)) ((Cell*)Pop(st))->state = STATE_UNKN;  // reset just in case
-        free(st);
     }
+    free(st);
 
-    Line* solution = MergeBlockPositions(NULL, length, MODE_GET);
+    Line* solution = MergeBlockPositions(NULL, length, MODE_GET, 0, 0);
     if (solution == NULL) return IMPOSSIBLE;  // NULL means we didn't succeed at all in the previous loop
     for (i = 0; i < length; i++) {
         if (line->cells[i]->state != solution->cells[i]->state) {
@@ -207,16 +312,37 @@ int solveline(Puzzle* puzzle, Stack** stack, Stack* cellstack, int x) {
                 Push(cellstack, line->cells[i]);
                 ConditionalPush(stack[!x], &puzzle->line[!x][i]);
             } else {
-                MergeBlockPositions(NULL, length, MODE_RESET);
+                MergeBlockPositions(NULL, length, MODE_RESET, 0, 0);
                 return IMPOSSIBLE;  // can this even get this far without detection? better safe than sorry though!
             }
         }
     }
 
-    MergeBlockPositions(NULL, length, MODE_RESET);
+    MergeBlockPositions(NULL, length, MODE_RESET, 0, 0);
     return solvedCells;
 }
 #undef IMPOSSIBLE
+
+int GetMaxBlockNumber(Puzzle* puzzle) {
+    int m = 0;
+    int i;
+    for (i=0; i < puzzle->length[ROW]; i++){
+        if (puzzle->line[ROW][i].blockNum > m){
+            m = puzzle->line[ROW][i].blockNum;
+        }
+    }
+    for (i=0; i < puzzle->length[COL]; i++){
+        if (puzzle->line[COL][i].blockNum > m){
+            m = puzzle->line[COL][i].blockNum;
+        }
+    }
+    return m;
+}
+
+int GetMaxCellsNumber(Puzzle* puzzle) {
+    return puzzle->length[ROW] <= puzzle->length[COL] ? puzzle->length[COL] : puzzle->length[ROW];
+}
+
 
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * solve: O(TODO)			Solves cells in a complete way to find all possible solutions to the puzzle	*
@@ -228,14 +354,22 @@ int solveline(Puzzle* puzzle, Stack** stack, Stack* cellstack, int x) {
  *	@noreturn																							*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void solve(Puzzle* puzzle, Stack** stack, Stack* cellstack, int unsolvedCellCount) {
+    /* Sort stacks once at the beginning for better line ordering */
+    SortStackByComplexity(stack[ROW], puzzle->length[ROW]);
+    SortStackByComplexity(stack[COL], puzzle->length[COL]);
+
     /* continuously solve puzzle */
-    while (!(IsStackEmpty(stack[ROW]) && IsStackEmpty(stack[COL])) && unsolvedCellCount > 0) {
-        if (!IsStackEmpty(stack[ROW])) {
+    int row_empty = IsStackEmpty(stack[ROW]);
+    int col_empty = IsStackEmpty(stack[COL]);
+    while (!(row_empty && col_empty) && unsolvedCellCount > 0) {
+        if (!row_empty) {
             unsolvedCellCount -= solveline(puzzle, stack, cellstack, ROW);
         }
-        if (!IsStackEmpty(stack[COL])) {
+        if (!col_empty) {
             unsolvedCellCount -= solveline(puzzle, stack, cellstack, COL);
         }
+        row_empty = IsStackEmpty(stack[ROW]);
+        col_empty = IsStackEmpty(stack[COL]);
     }
 
     if (unsolvedCellCount > 0) {               // puzzle could not be fully solved through regular means... time to guess
@@ -278,12 +412,9 @@ void solve(Puzzle* puzzle, Stack** stack, Stack* cellstack, int unsolvedCellCoun
         puzzle->line[ROW][row].unsolvedCells++;
         puzzle->line[COL][col].unsolvedCells++;
 
-        ClearStack(nextcellstack);  // should already be cleared, but clear it anyway
         free(nextcellstack);
     } else if (unsolvedCellCount == 0) {                 // the puzzle has no more '?'s
         if (checkpuzzle(puzzle)) PrintSolution(puzzle);  // check solution and export it if correct
-    } else {
-        // invalid solution, get out
     }
 
     ClearStack(stack[ROW]);  // in case they are not empty yet
@@ -302,6 +433,7 @@ void run_solver(char* filename) {
 
         /* solve! */
         Stack** stack = InitStacks(puzzle);
+        MergeBlockPositions(NULL, 0, MODE_INIT, GetMaxBlockNumber(puzzle), GetMaxCellsNumber(puzzle));
         solve(puzzle, stack, NULL, unsolvedCellCount);
         FreeStacks(stack);
     } else if (unsolvedCellCount == 0) {  // presolve fully solved puzzle
