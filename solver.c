@@ -8,52 +8,49 @@
 #include "solverio.h"
 #include "stocks.h"
 
-/** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * CalculateLineComplexity:	Calculates a heuristic score for how constrained a line is.				*
- *								Lower score = more constrained = should solve first						*
- *																										*
- * @param Line* :				line to calculate complexity for									*
- * @param int :				length of the line														*
- *	@return int :				complexity score (lower is more constrained)						*
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-int CalculateLineComplexity(Line* line, int length) {
-    if (line->unsolvedCells == 0) return 999999;  // Solved lines get lowest priority
-    
-    int totalBlockLength = 0;
-    int i;
-    
-    // Sum up all block lengths
-    for (i = 0; i < line->blockNum; i++) {
-        totalBlockLength += line->block[i].length;
-    }
-    
-    // Minimum spaces needed between blocks (blockNum - 1)
-    int minSpaces = (line->blockNum > 0) ? (line->blockNum - 1) : 0;
-    
-    // Free cells = total length - block lengths - minimum spaces
-    int freeCells = length - totalBlockLength - minSpaces;
-    
-    // Heuristic: fewer free cells = more constrained = lower score
-    // Also factor in the ratio of unsolved cells
-    // Lines with fewer options should be solved first
-    int complexity = (freeCells * 1000) + line->unsolvedCells;
-    
-    return complexity;
-}
-
-/** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * CompareLineComplexity:	Comparison function for sorting lines by complexity						*
- *																										*
- * @param void* :				first line pointer														*
- * @param void* :				second line pointer														*
- *	@return int :				comparison result (-1, 0, 1)											*
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 typedef struct {
     Line* line;
     int complexity;
     int coord;
 } LineWithComplexity;
 
+/** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * CalculateLineComplexity:	Calculates a heuristic score for how constrained a line is.			    	*
+ *							    A lower score means that solving this line is more complex              *
+ *				                and should therefore be done later                                      *
+ *																										*
+ * @param Line* :				line to calculate complexity for								    	*
+ * @param int :				    length of the line														*
+ *	@return int :				complexity score where lower means that it is more complex				*
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+int CalculateLineComplexity(Line* line, int length) {
+    // when lines are solved, then they get the lowest complexity, as they can be checked last
+    if (line->unsolvedCells == 0) return 999999;
+    
+    int totalBlockLength = 0;
+    int i;
+    
+    for (i = 0; i < line->blockNum; i++) {
+        totalBlockLength += line->block[i].length;
+    }
+
+    int minSpaces = (line->blockNum > 0) ? (line->blockNum - 1) : 0;
+    
+    // The amount of cells that are free, after all blocks would be inserted with the minimum space between them
+    int freeCells = length - totalBlockLength - minSpaces;
+
+    int complexity = (freeCells * 1000) + line->unsolvedCells;
+    
+    return complexity;
+}
+
+/** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * CompareLineComplexity:	Comparison function for sorting lines by complexity				    		*
+ *																										*
+ * @param void* :				first line pointer														*
+ * @param void* :				second line pointer														*
+ *	@return int :				comparison result (-1, 0, 1)											*
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 int CompareLineComplexity(const void* a, const void* b) {
     LineWithComplexity* la = (LineWithComplexity*)a;
     LineWithComplexity* lb = (LineWithComplexity*)b;
@@ -61,18 +58,17 @@ int CompareLineComplexity(const void* a, const void* b) {
 }
 
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * SortStackByComplexity:	Sorts a stack by line complexity and returns as array					*
+ * SortStackByComplexity:	Sorts a stack by line complexity                        					*
  *																										*
  * @param Stack* :				stack to sort															*
- * @param int :				coordinate (ROW or COL)													*
- * @param Puzzle* :			puzzle structure														*
- * @param int* :				output count of lines													*
- *	@return LineWithComplexity* : sorted array of lines												*
+ * @param int :				ROW|COL - coordinate of this line							    			*
+ * @param int* :			length of the line															*
+ *	@noreturn :	                                            											*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-void SortStackByComplexity(Stack* stack, int coord, int length, int* outCount) {
+void SortStackByComplexity(Stack* stack, int coord, int length) {
     int count = 0;
-    
-    // Count items in stack
+
+    // need to count the elements in order to allocate enough space for all lines
     Stack* tempStack = CreateStack();
     while (!IsStackEmpty(stack)) {
         Push(tempStack, Pop(stack));
@@ -81,12 +77,11 @@ void SortStackByComplexity(Stack* stack, int coord, int length, int* outCount) {
     
     if (count == 0) {
         free(tempStack);
-        *outCount = 0;
         return;
     }
     
-    // Create array and calculate complexities
     LineWithComplexity* lines = (LineWithComplexity*)malloc(count * sizeof(LineWithComplexity));
+
     int i = 0;
     
     while (!IsStackEmpty(tempStack)) {
@@ -96,18 +91,16 @@ void SortStackByComplexity(Stack* stack, int coord, int length, int* outCount) {
         lines[i].coord = coord;
         i++;
     }
-    
-    // Sort by complexity
+
     qsort(lines, count, sizeof(LineWithComplexity), CompareLineComplexity);
     
-    // Push back to stack in reverse order (most complex first, so best pops first)
+    // Push lines back to original stack in reverse order so that the easiest one will be solved first
     for (i = count - 1; i >= 0; i--) {
         Push(stack, lines[i].line);
     }
     
     free(tempStack);
     free(lines);
-    *outCount = count;
 }
 
 #define MODE_GET 0
@@ -364,9 +357,8 @@ int GetMaxCellsNumber(Puzzle* puzzle) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void solve(Puzzle* puzzle, Stack** stack, Stack* cellstack, int unsolvedCellCount) {
     /* Sort stacks once at the beginning for better line ordering */
-    int rowCount, colCount;
-    SortStackByComplexity(stack[ROW], ROW, puzzle->length[ROW], &rowCount);
-    SortStackByComplexity(stack[COL], COL, puzzle->length[COL], &colCount);
+    SortStackByComplexity(stack[ROW], ROW, puzzle->length[ROW]);
+    SortStackByComplexity(stack[COL], COL, puzzle->length[COL]);
 
     /* continuously solve puzzle */
     int row_empty = IsStackEmpty(stack[ROW]);
