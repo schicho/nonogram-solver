@@ -11,7 +11,6 @@
 typedef struct {
     Line* line;
     int complexity;
-    int coord;
 } LineWithComplexity;
 
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -65,7 +64,7 @@ int CompareLineComplexity(const void* a, const void* b) {
  * @param int* :			length of the line															*
  *	@noreturn :	                                            											*
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-void SortStackByComplexity(Stack* stack, int coord, int length) {
+void SortStackByComplexity(Stack* stack, int length) {
     int count = 0;
 
     // need to count the elements in order to allocate enough space for all lines
@@ -88,7 +87,6 @@ void SortStackByComplexity(Stack* stack, int coord, int length) {
         Line* line = (Line*)Pop(tempStack);
         lines[i].line = line;
         lines[i].complexity = CalculateLineComplexity(line, length);
-        lines[i].coord = coord;
         i++;
     }
 
@@ -357,8 +355,8 @@ int GetMaxCellsNumber(Puzzle* puzzle) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 void solve(Puzzle* puzzle, Stack** stack, Stack* cellstack, int unsolvedCellCount) {
     /* Sort stacks once at the beginning for better line ordering */
-    SortStackByComplexity(stack[ROW], ROW, puzzle->length[ROW]);
-    SortStackByComplexity(stack[COL], COL, puzzle->length[COL]);
+    SortStackByComplexity(stack[ROW], puzzle->length[ROW]);
+    SortStackByComplexity(stack[COL], puzzle->length[COL]);
 
     /* continuously solve puzzle */
     int row_empty = IsStackEmpty(stack[ROW]);
