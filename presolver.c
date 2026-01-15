@@ -6,6 +6,8 @@
 
 #include "stocks.h"
 
+#define IMPOSSIBLE -1
+
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * presolve: O(L*N²)		Calls stackline on every row and on every column once to solve	 			*
  *							the easiest cells, to pave the way for the fuller linesolver.				*
@@ -20,6 +22,7 @@ int presolve(Puzzle* puzzle) {  // O(L*N²)
         for (i = 0; i < puzzle->length[x]; i++) {
             if (unsolvedCellCount > 0) {
                 buf = stackline(&puzzle->line[x][i], puzzle->length[!x]);
+                if (buf == IMPOSSIBLE) return IMPOSSIBLE;
                 unsolvedCellCount -= buf;
                 puzzle->line[x][i].unsolvedCells -= buf;
             } else {
@@ -31,7 +34,6 @@ int presolve(Puzzle* puzzle) {  // O(L*N²)
     return unsolvedCellCount;
 }
 
-#define IMPOSSIBLE -1
 /** * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * stackline: O(N²)		Solves cells implicitly based on the line's native 							*
  *							characteristics, ie block number and block sizes.							*
