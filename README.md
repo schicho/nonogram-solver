@@ -1,3 +1,22 @@
+# Nonogram Solver
+
+This nonogram solver was optimized for speed as part of a course project in the class ["Efficient Programs (194.189 PR)"](https://www.complang.tuwien.ac.at/anton/lvas/effiziente-programme.html) by Professor Anton Ertl at TU Wien during the winter semester 2025/26.
+
+The goals were to optimize the program for speed as much as possible, while attempting to avoid algorithmic changes. In the end, we succeeded in cutting the execution time in half on average.
+
+The program was forked from [github.com/Stabbath/nonogram-solver](https://github.com/Stabbath/nonogram-solver).
+
+To investigate the changes we've made, you can either look at the commits or, for a more compact view, the merged pull requests.
+
+## Building and Benchmarking
+
+- `make` will build the program.
+- `make benchmark` will execute the program in benchmarking mode, where it solves puzzle 6 `puzzles/p6.cfg` 500 times.
+
+# Previous Readme
+
+The text below is kept for completeness. It is the Readme of the forked project.
+
 # nonogram-solver!
 
 Title is self-explanatory: code for a nonogram-solving program. Only for single-colored puzzles.
