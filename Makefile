@@ -10,15 +10,19 @@ USE_MIMALLOC ?= 0
 ifeq ($(USE_MIMALLOC),1)
   MIMALLOC_AVAILABLE := $(shell pkg-config --exists mimalloc && echo 1 || echo 0)
   ifeq ($(MIMALLOC_AVAILABLE),1)
-    MIMALLOC_CFLAGS := $(shell pkg-config --cflags mimalloc)
     MIMALLOC_LDFLAGS := $(shell pkg-config --libs mimalloc)
   else
     # Fallback: try to link with -lmimalloc directly
     MIMALLOC_LDFLAGS := -lmimalloc
     $(info Warning: pkg-config for mimalloc not found, trying direct linking)
   endif
-  # Use -Wl,--no-as-needed to ensure mimalloc is actually linked
-  LDFLAGS += -Wl,--no-as-needed $(MIMALLOC_LDFLAGS) -Wl,--as-needed
+  # Ensure mimalloc is linked (use platform-specific flags)
+  UNAME_S := $(shell uname -s)
+  ifeq ($(UNAME_S),Linux)
+    LDFLAGS += -Wl,--no-as-needed $(MIMALLOC_LDFLAGS) -Wl,--as-needed
+  else
+    LDFLAGS += $(MIMALLOC_LDFLAGS)
+  endif
   $(info Building with mimalloc allocator)
 else
   $(info Building with system allocator)

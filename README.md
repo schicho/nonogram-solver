@@ -15,7 +15,7 @@ To investigate the changes we've made, you can either look at the commits or, fo
 
 ### Building with mimalloc (Optional)
 
-[mimalloc](https://github.com/microsoft/mimalloc) is a high-performance allocator that can significantly improve the performance of this program (typically 10-15% faster with lower memory usage).
+[mimalloc](https://github.com/microsoft/mimalloc) is a high-performance allocator that can improve the performance of this program.
 
 To build with mimalloc support:
 
@@ -34,7 +34,7 @@ To build with mimalloc support:
    make USE_MIMALLOC=1 benchmark
    ```
 
-**Note**: The program will build with the system allocator by default if mimalloc is not found. To use mimalloc, you must explicitly set `USE_MIMALLOC=1`.
+**Note**: The program will build with the system allocator by default. To use mimalloc, you must explicitly set `USE_MIMALLOC=1`. Performance improvements will vary by puzzle and system, but typically show faster execution with lower memory usage.
 
 ### Alternative: Runtime Loading (Linux)
 
