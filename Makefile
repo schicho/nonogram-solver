@@ -17,7 +17,8 @@ ifeq ($(USE_MIMALLOC),1)
     MIMALLOC_LDFLAGS := -lmimalloc
     $(info Warning: pkg-config for mimalloc not found, trying direct linking)
   endif
-  LDFLAGS += $(MIMALLOC_LDFLAGS)
+  # Use -Wl,--no-as-needed to ensure mimalloc is actually linked
+  LDFLAGS += -Wl,--no-as-needed $(MIMALLOC_LDFLAGS) -Wl,--as-needed
   $(info Building with mimalloc allocator)
 else
   $(info Building with system allocator)
