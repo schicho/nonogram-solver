@@ -13,6 +13,37 @@ To investigate the changes we've made, you can either look at the commits or, fo
 - `make` will build the program.
 - `make benchmark` will execute the program in benchmarking mode, where it solves puzzle 6 `puzzles/p6.cfg` 500 times.
 
+### Building with mimalloc (Optional)
+
+[mimalloc](https://github.com/microsoft/mimalloc) is a high-performance allocator that can significantly improve the performance of this program (typically 10-15% faster with lower memory usage).
+
+To build with mimalloc support:
+
+1. **Install mimalloc** (if not already installed):
+   - On Ubuntu/Debian: `sudo apt-get install libmimalloc-dev`
+   - On macOS: `brew install mimalloc`
+   - Or build from source: https://microsoft.github.io/mimalloc/build.html
+
+2. **Build with mimalloc**:
+   ```bash
+   make USE_MIMALLOC=1
+   ```
+
+3. **Run benchmark with mimalloc**:
+   ```bash
+   make USE_MIMALLOC=1 benchmark
+   ```
+
+**Note**: The program will build with the system allocator by default if mimalloc is not found. To use mimalloc, you must explicitly set `USE_MIMALLOC=1`.
+
+### Alternative: Runtime Loading (Linux)
+
+On Linux, you can also use mimalloc without rebuilding by loading it at runtime:
+
+```bash
+LD_PRELOAD=/usr/local/lib/libmimalloc.so ./nonograms puzzles/p6.cfg
+```
+
 # Previous Readme
 
 The text below is kept for completeness. It is the Readme of the forked project.
